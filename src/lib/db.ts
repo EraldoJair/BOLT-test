@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import { z } from 'zod';
 
-const MONGODB_URI = 'mongodb+srv://eraldovaldivia:123$Eraldo$123@crmprueba.wozor.mongodb.net/?retryWrites=true&w=majority&appName=CRMprueba';
+// const MONGODB_URI = 'mongodb+srv://eraldovaldivia:123$Eraldo$123@crmprueba.wozor.mongodb.net/?retryWrites=true&w=majority&appName=CRMprueba';
+const MONGODB_URI = 'mongodb+srv://eraldovaldivia:123$Eraldo$123@crmprueba.wozor.mongodb.net/?retryWrites=true&w=majority&appName=real_estate';
 
 export async function connectDB() {
   try {

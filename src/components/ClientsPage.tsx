@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useClients } from '../hooks/useClients';
-import { PlusCircle, Search, User, Loader, X, CheckCircle } from 'lucide-react';
+import { PlusCircle, Search, User, Loader, X, CheckCircle, Trash2, AlertCircle } from 'lucide-react';
 import type { Client as ClientType } from '../types';
 
 export function ClientsPage() {
-  const { clients, isLoading, error, createClient, updateClient } = useClients();
+  const { clients, isLoading, error, createClient, updateClient, deleteClient } = useClients();
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [editingClient, setEditingClient] = useState<ClientType | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<ClientType | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -17,6 +19,9 @@ export function ClientsPage() {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [deleteStatus, setDeleteStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,12 +52,15 @@ export function ClientsPage() {
     if (!validateForm()) return;
     
     setSubmitStatus('loading');
+    setErrorMessage('');
     
     try {
       if (editingClient) {
         await updateClient.mutateAsync({ id: editingClient.id, data: formData });
+        setSuccessMessage('Client updated successfully');
       } else {
         await createClient.mutateAsync(formData);
+        setSuccessMessage('Client created successfully');
       }
       setSubmitStatus('success');
       setTimeout(() => {
@@ -63,6 +71,29 @@ export function ClientsPage() {
     } catch (error) {
       console.error('Error saving client:', error);
       setSubmitStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'An unexpected error occurred');
+    }
+  };
+
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return;
+    
+    setDeleteStatus('loading');
+    setErrorMessage('');
+    
+    try {
+      await deleteClient.mutateAsync(clientToDelete.id);
+      setDeleteStatus('success');
+      setSuccessMessage('Client deleted successfully');
+      setTimeout(() => {
+        setShowDeleteConfirmation(false);
+        setDeleteStatus('idle');
+        setClientToDelete(null);
+      }, 1500);
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      setDeleteStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'An unexpected error occurred');
     }
   };
 
@@ -84,6 +115,11 @@ export function ClientsPage() {
     setShowModal(true);
   };
 
+  const openDeleteConfirmation = (client: ClientType) => {
+    setClientToDelete(client);
+    setShowDeleteConfirmation(true);
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -99,6 +135,17 @@ export function ClientsPage() {
   const closeModal = () => {
     setShowModal(false);
     resetForm();
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteConfirmation(false);
+    setClientToDelete(null);
+    setDeleteStatus('idle');
+  };
+
+  const dismissMessage = () => {
+    setSuccessMessage('');
+    setErrorMessage('');
   };
 
   const filteredClients = clients?.filter(client => 
@@ -125,6 +172,31 @@ export function ClientsPage() {
 
   return (
     <div className="p-6">
+      {/* Success and error messages */}
+      {successMessage && (
+        <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative">
+          <span className="block sm:inline">{successMessage}</span>
+          <button
+            className="absolute top-0 bottom-0 right-0 px-4 py-3"
+            onClick={dismissMessage}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+          <span className="block sm:inline">{errorMessage}</span>
+          <button
+            className="absolute top-0 bottom-0 right-0 px-4 py-3"
+            onClick={dismissMessage}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
         <button 
@@ -171,6 +243,7 @@ export function ClientsPage() {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                        <div className="text-sm text-gray-500">{client.address}</div>
                       </div>
                     </div>
                   </td>
@@ -183,6 +256,12 @@ export function ClientsPage() {
                       className="text-blue-600 hover:text-blue-900 mr-3"
                     >
                       Edit
+                    </button>
+                    <button
+                      onClick={() => openDeleteConfirmation(client)}
+                      className="text-red-600 hover:text-red-900 mr-3"
+                    >
+                      Delete
                     </button>
                     <button className="text-blue-600 hover:text-blue-900">
                       View Details
@@ -328,6 +407,69 @@ export function ClientsPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmation && clientToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
+            <div className="flex justify-between items-center border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-medium text-gray-900">Confirm Deletion</h3>
+              <button onClick={closeDeleteModal} className="text-gray-400 hover:text-gray-500">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <AlertCircle className="h-6 w-6 text-red-500 mr-2" />
+                <p className="text-gray-700">
+                  Are you sure you want to delete <span className="font-semibold">{clientToDelete.name}</span>? This action cannot be undone.
+                </p>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeDeleteModal}
+                  className="bg-white px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteClient}
+                  disabled={deleteStatus === 'loading' || deleteStatus === 'success'}
+                  className={`px-4 py-2 rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-red-500 ${
+                    deleteStatus === 'loading' ? 'bg-red-400' : 
+                    deleteStatus === 'success' ? 'bg-green-500' : 
+                    'bg-red-500 hover:bg-red-600'
+                  }`}
+                >
+                  {deleteStatus === 'loading' ? (
+                    <div className="flex items-center">
+                      <Loader className="animate-spin h-4 w-4 mr-2" />
+                      Deleting...
+                    </div>
+                  ) : deleteStatus === 'success' ? (
+                    <div className="flex items-center">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Deleted!
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Client
+                    </div>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Client Details View - To be implemented */}
+      {/* Pagination component - To be implemented */}
     </div>
   );
 }
