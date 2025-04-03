@@ -9,16 +9,23 @@ import {
   LogOut 
 } from 'lucide-react';
 
+type Route = 'dashboard' | 'clients' | 'lots' | 'contracts' | 'payments' | 'settings';
+
+interface SidebarProps {
+  currentRoute: Route;
+  onRouteChange: (route: Route) => void;
+}
+
 const navigation = [
-  { name: 'Dashboard', icon: LayoutDashboard },
-  { name: 'Clients', icon: Users },
-  { name: 'Lots', icon: Map },
-  { name: 'Contracts', icon: FileText },
-  { name: 'Payments', icon: CreditCard },
-  { name: 'Settings', icon: Settings },
+  { name: 'Dashboard', route: 'dashboard' as Route, icon: LayoutDashboard },
+  { name: 'Clients', route: 'clients' as Route, icon: Users },
+  { name: 'Lots', route: 'lots' as Route, icon: Map },
+  { name: 'Contracts', route: 'contracts' as Route, icon: FileText },
+  { name: 'Payments', route: 'payments' as Route, icon: CreditCard },
+  { name: 'Settings', route: 'settings' as Route, icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ currentRoute, onRouteChange }: SidebarProps) {
   return (
     <div className="flex flex-col h-full bg-gray-900 text-white w-64">
       <div className="p-4">
@@ -31,14 +38,18 @@ export function Sidebar() {
           {navigation.map((item) => {
             const Icon = item.icon;
             return (
-              <a
+              <button
                 key={item.name}
-                href="#"
-                className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-800 rounded-lg transition-colors duration-200"
+                onClick={() => onRouteChange(item.route)}
+                className={`flex items-center space-x-2 px-4 py-2 text-gray-300 rounded-lg transition-colors duration-200 w-full ${
+                  currentRoute === item.route 
+                    ? 'bg-gray-800 text-white' 
+                    : 'hover:bg-gray-800'
+                }`}
               >
                 <Icon className="h-5 w-5" />
                 <span>{item.name}</span>
-              </a>
+              </button>
             );
           })}
         </nav>
