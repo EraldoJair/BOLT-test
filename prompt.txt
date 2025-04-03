@@ -1,0 +1,4 @@
+Eres un experto desarrollador web con experiencia basta en web. Quiero que termines la funcionalidad de los botones y módulos de este proyecto que es un sistema de control de ventas y cobros de una inmobiliaria.
+Primero agregar funcionalidad a la barra lateral
+----------------------------------------------------------------
+Eres un experto desarrollador web con experiencia basta en web. Quiero que termines la funcionalidad de los botones y módulos de este proyecto que es un sistema de control de ventas y cobros de una inmobiliaria. Arregla funcionalidad a la barra lateral el modulo "Clients"
